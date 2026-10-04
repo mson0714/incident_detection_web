@@ -210,6 +210,7 @@ PHP tests use an isolated in-memory SQLite database, never the developer's MySQL
 | [API contract](docs/API.md) | Endpoints, response và trạng thái dữ liệu |
 | [Backend foundation](docs/backend-db-foundation-report.md) | Database, API và kiểm thử backend |
 | [Flood baseline](docs/flood-detection-baseline-report.md) | Dataset, feature extraction, training và giới hạn |
+| [CCTV sources](docs/cctv-sources.md) | Catalog 1.284 trang camera công khai và quy trình nghiên cứu |
 | [ML setup](ml/README.md) | Chuẩn bị môi trường Python và chạy module |
 
 ```text
