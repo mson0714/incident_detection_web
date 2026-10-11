@@ -170,4 +170,14 @@ const paths = {
 .monitoring.editorial-theme .system-note svg { stroke: #0081c0; }
 .monitoring.editorial-theme .observation-stage :deep(.camera-status),
 .monitoring.editorial-theme .observation-stage :deep(.camera-caption) { color: #646464; }
+
+.monitoring.editorial-theme :is(.metric-top, .model-card strong, .model-rail-heading h2, .monitor-panel-head h2, .stage-heading strong, .camera-directory strong, .event-name) {
+  font-weight: var(--font-weight-heading);
+}
+.monitoring.editorial-theme :is(.view-switch button, .all-cameras, .event-filter-bar button, .service-list li, .model-card-link) {
+  font-weight: var(--font-weight-label);
+}
+.monitoring.editorial-theme :is(.workspace-tag, .control-kicker, .section-number, .demo-disclosure b, .demo-disclosure strong, .metric-number > span, .model-rail-status, .model-card-index, .model-card small, .stage-heading > span, .directory-heading, .camera-index, .demo-label, .event-name small, .event-camera, .monitor-event-list time, .service-count, .service-index, .monitoring-footer) {
+  font-weight: var(--font-weight-body);
+}
 </style>

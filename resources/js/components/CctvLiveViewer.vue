@@ -157,4 +157,6 @@ onBeforeUnmount(() => {
 .camera-stale{position:absolute;bottom:10px;left:10px;background:#0b1118e8;color:#f4c175;padding:7px 10px;border-radius:5px;font-size:12px}
 .camera-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px}.camera-controls button{min-height:44px}.camera-controls a{color:var(--cyan);font-size:12px;margin-left:auto}
 .camera-caption{font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:0}.camera-caption span{display:block}
+.camera-mark{font-weight:var(--font-weight-body)}
+.camera-status,.camera-stale,.camera-controls a{font-weight:var(--font-weight-label)}
 </style>

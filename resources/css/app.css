@@ -432,12 +432,16 @@ button.alert-item:hover,
   --paper: #ffffff;
   --linen: #f9faf7;
   --graphite: #2c2c2c;
+  --font-weight-body: 500;
+  --font-weight-label: 600;
+  --font-weight-heading: 700;
 }
 
 body {
   background: var(--bg);
   color: var(--ink);
   font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: var(--font-weight-body);
 }
 
 .sidebar {
@@ -449,16 +453,16 @@ body {
 .brand-name { color: #171717; }
 .brand-name span { color: #0081c0; }
 .eyebrow, .nav-label { color: #646464; }
-.nav button { color: #646464; border-radius: 50px; }
+.nav button { color: #646464; border-radius: 50px; font-weight: var(--font-weight-label); }
 .nav button:hover { color: #2c2c2c; background: #f9faf7; }
-.nav button.active { color: #282834; background: #ffffff; border: 1px solid #41a1cf; font-weight: 500; }
+.nav button.active { color: #282834; background: #ffffff; border: 1px solid #41a1cf; font-weight: var(--font-weight-heading); }
 .nav-count { background: #f9faf7; color: #0081c0; }
 .sidebar-foot { border-top-color: var(--line); }
 .status-line { color: #646464; }
 .dot { background: #41a1cf; box-shadow: none; }
 .dot.warn { background: #aa6b2f; box-shadow: none; }
 .main { padding-top: 34px; }
-.page-title { color: #2c2c2c; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; letter-spacing: -.04em; }
+.page-title { color: #2c2c2c; font-family: Georgia, 'Times New Roman', serif; font-weight: var(--font-weight-heading); letter-spacing: -.04em; }
 .mobile-menu, .refresh { color: #282834; background: #ffffff; border-color: #dee2de; }
 .refresh:hover { color: #0081c0; border-color: #41a1cf; }
 .card { background: #ffffff; border-color: #dee2de; box-shadow: 0 1px 1px rgba(0, 0, 0, .08), 0 4px 5px rgba(0, 0, 0, .04); }
@@ -467,3 +471,43 @@ body {
 .notice.warn, .data-notice { background: #fffaf0; color: #6f573a; border-color: #dfcda9; }
 .notice.error { background: #fff5f4; color: #8c3e3a; border-color: #e2b6b3; }
 .nav-backdrop { background: rgba(40, 40, 52, .18); }
+
+/* Keep the type hierarchy stronger without changing font sizes or spacing. */
+.panel-title,
+.card-title,
+.station-heading,
+.alert-name,
+.station-name {
+  font-weight: var(--font-weight-heading);
+}
+
+button,
+.select,
+.kpi-label,
+.mini-label,
+.filter-bar label,
+.detail-facts dt,
+.risk-label,
+.link-button,
+.back-btn {
+  font-weight: var(--font-weight-label);
+}
+
+.eyebrow,
+.nav-count,
+.timestamp,
+.kpi-meta,
+.kpi-meta strong,
+.kpi-value small,
+.pill,
+.map-label,
+.map-legend,
+.station-table th,
+.station-id,
+.station-heading span,
+.mini-value small,
+.chart-note,
+.insight-value,
+.step-number {
+  font-weight: var(--font-weight-body);
+}

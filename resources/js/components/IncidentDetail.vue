@@ -102,7 +102,7 @@ function saveNote() {
 .incident-page .incident-breadcrumb { color: #646464; }
 .incident-page .incident-breadcrumb button { color: #444141; }
 .incident-page .incident-kicker { color: #0081c0; }
-.incident-page .incident-hero h2 { color: #2c2c2c; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
+.incident-page .incident-hero h2 { color: #2c2c2c; font-family: Georgia, 'Times New Roman', serif; font-weight: var(--font-weight-heading); }
 .incident-page .incident-hero p,
 .incident-page .hero-model small,
 .incident-page .incident-scenario p,
@@ -147,4 +147,14 @@ function saveNote() {
 .incident-page .review-actions .resolve-button { color: #0081c0; background: transparent; border-color: #41a1cf; }
 .incident-page .action-message { background: #f1f8f5; color: #2f6a58; }
 .incident-page .history-panel ol { border-color: #dee2de; }
+
+.incident-page :is(.incident-breadcrumb strong, .incident-panel-heading h3, .incident-records strong, .incident-scenario h4, .verification h4, .history-panel h4) {
+  font-weight: var(--font-weight-heading);
+}
+.incident-page :is(.incident-type-tabs button, .incident-filters label, .inspector-tabs button, .incident-facts dt, .incident-review > label, .note-save, .review-actions button) {
+  font-weight: var(--font-weight-label);
+}
+.incident-page :is(input:not([type=checkbox]), select, textarea, .incident-kicker, .incident-demo b, .small-count, .record-id, .incident-records time, .inspector-tabs button span, .scenario-measurement strong, .verification header > span, .history-panel time, .incident-footer) {
+  font-weight: var(--font-weight-body);
+}
 </style>

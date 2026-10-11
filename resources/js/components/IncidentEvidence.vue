@@ -1,10 +1,18 @@
 <script setup>
 defineProps({ type: { type: String, required: true }, camera: { type: String, required: true } });
+const redLightVideoUrl = '/media/demo_vuot_den_do.mp4';
 </script>
 
 <template>
     <div class="evidence-scene">
         <div class="evidence-overlay"><span>{{ camera }} / SCHEMATIC</span><b>MINH HỌA · KHÔNG PHẢI ẢNH THẬT</b></div>
+        <div v-if="type === 'redlight'" class="evidence-video-block">
+            <div class="evidence-video-heading"><div><span>03 / MEDIA EVIDENCE</span><strong>Video minh họa vượt đèn đỏ</strong></div><b>UI DEMO</b></div>
+            <div class="evidence-video-frame">
+                <video class="evidence-video" :src="redLightVideoUrl" controls playsinline preload="metadata" aria-label="Video minh họa vượt đèn đỏ"></video>
+            </div>
+            <p class="evidence-video-note">Video cục bộ <strong>demo_vuot_den_do.mp4</strong> · H.264 + AAC · dài khoảng 7,5 giây. Đây là tư liệu minh họa, chưa phải bằng chứng vận hành.</p>
+        </div>
         <svg viewBox="0 0 720 360" role="img" :aria-label="`Sơ đồ minh họa ${type}, không phải bằng chứng camera`">
             <defs><pattern id="incident-grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#6b8b9f" stroke-opacity=".1" /></pattern></defs>
             <rect width="720" height="360" fill="#0b151f" />
@@ -46,10 +54,13 @@ defineProps({ type: { type: String, required: true }, camera: { type: String, re
             </g>
             <text x="25" y="343" class="scene-footer">UI DEMO / NO INFERENCE / NO RECORDING</text>
         </svg>
-        <div class="evidence-caption">Sơ đồ giải thích vùng quan sát. Chưa có ảnh hoặc video bằng chứng gắn với bản ghi này.</div>
+        <div class="evidence-caption">{{ type === 'redlight' ? 'Sơ đồ giải thích vạch dừng và hướng di chuyển. Video bên trên chỉ là nguồn minh họa cục bộ, không tự tạo kết luận AI.' : 'Sơ đồ giải thích vùng quan sát. Chưa có ảnh hoặc video bằng chứng gắn với bản ghi này.' }}</div>
     </div>
 </template>
 
 <style scoped>
+.evidence-scene{font-weight:var(--font-weight-body)}
 .evidence-scene{border:1px solid #314453;border-radius:9px;overflow:hidden;background:#0b151f}.evidence-overlay{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid #263b4a;font:10px 'DM Mono',monospace;color:#91aaba}.evidence-overlay b{font-weight:400;color:var(--accent);font-size:9px}.evidence-scene svg{width:100%;height:auto;display:block}.evidence-scene text{font:11px 'DM Mono',monospace;fill:var(--accent);letter-spacing:.05em}.evidence-scene .scene-footer{fill:#748e9e;font-size:9px}.evidence-caption{padding:12px 16px;color:#8fa6b6;font-size:11px;line-height:1.7;border-top:1px solid #263b4a}
+.evidence-video-block{border-bottom:1px solid #263b4a;background:#07111a}.evidence-video-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid #263b4a}.evidence-video-heading span{display:block;color:var(--accent);font:9px 'DM Mono',monospace;letter-spacing:.1em}.evidence-video-heading strong{display:block;margin-top:5px;color:#d7e5eb;font-size:13px}.evidence-video-heading>b{color:var(--accent);font:9px 'DM Mono',monospace}.evidence-video-frame{display:grid;place-items:center;min-height:220px;padding:16px;background:#050a10}.evidence-video{display:block;width:auto;max-width:100%;height:min(520px,65vh);background:#050a10;object-fit:contain}.evidence-video-note{margin:0;padding:11px 16px;color:#8fa6b6;font-size:11px;line-height:1.7}.evidence-video-note strong{color:#c6d8e2;font-weight:600}
+@media(max-width:600px){.evidence-video{height:min(420px,65vh)}.evidence-video-heading{align-items:flex-start;flex-direction:column;gap:7px}}
 </style>

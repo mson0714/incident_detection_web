@@ -203,4 +203,20 @@ onBeforeUnmount(clearVideo);
 @media(min-width:1350px){.cctv-viewer{position:sticky;top:20px}}
 @media(max-width:1100px){.cctv-layout{grid-template-columns:1fr}.cctv-viewer{grid-row:1}.cctv-intro{flex-wrap:wrap}.cctv-total{border-left:0;padding-left:0}.cctv-screen{min-height:240px}}
 @media(max-width:480px){.cctv-grid{grid-template-columns:1fr}.cctv-tabs button{font-size:12px}.cctv-intro{gap:20px}.cctv-total strong{font-size:28px}.cctv-screen{padding:22px 12px}.cctv-detail dl>div{flex-wrap:wrap}.cctv-pager{justify-content:center}}
+
+.cctv-intro h2,
+.cctv-screen h3,
+.cctv-detail h3,
+.cctv-camera strong {
+  font-weight: var(--font-weight-heading);
+}
+.cctv-filters label,
+.cctv-tabs button,
+.cctv-detail dt,
+.cctv-file {
+  font-weight: var(--font-weight-label);
+}
+.cctv-camera-code {
+  font-weight: var(--font-weight-body);
+}
 </style>
