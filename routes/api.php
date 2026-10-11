@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UrbanController;
+use App\Http\Controllers\CctvController;
 
 Route::get('/dashboard', [UrbanController::class, 'dashboard']);
 Route::get('/stations', [UrbanController::class, 'stations']);
@@ -12,6 +13,8 @@ Route::get('/alerts', [UrbanController::class, 'alerts']);
 Route::get('/model/metrics', [UrbanController::class, 'metrics']);
 Route::get('/pipeline/status', [UrbanController::class, 'pipeline']);
 Route::get('/health', [UrbanController::class, 'health']);
+Route::get('/cctv', [CctvController::class, 'index']);
+Route::get('/cctv/{id}/playback', [CctvController::class, 'playback'])->whereNumber('id')->middleware('throttle:30,1');
 
 Route::prefix('v1/flood')->group(function () {
     Route::get('/health', [\App\Http\Controllers\FloodController::class, 'health']);

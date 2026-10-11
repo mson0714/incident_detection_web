@@ -2,6 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import StationMap from './components/StationMap.vue';
 import ForecastChart from './components/ForecastChart.vue';
+import CctvBrowser from './components/CctvBrowser.vue';
+import UrbanMonitoringDashboard from './components/UrbanMonitoringDashboard.vue';
+import IncidentDetail from './components/IncidentDetail.vue';
+import { incidentTypeFromView } from './lib/incidentDetails';
+import { eventTypes } from './lib/monitoring';
 import { useUrbanResource } from './composables/useUrbanResource';
 import { forecastAvailable, forecastFor, formatDate, formatNumber, hasNumber, horizonMetrics, stationMetrics, pipelineFailures } from './lib/urban';
 
@@ -13,7 +18,9 @@ const pipeline = useUrbanResource('/api/pipeline/status');
 const hotspots = useUrbanResource('/api/hotspots?horizon=6');
 const detail = useUrbanResource(null, (payload) => payload?.data?.id && Array.isArray(payload?.forecasts));
 
-const activeView = ref('overview');
+const activeView = ref(viewFromLocation());
+const incidentType = computed(() => incidentTypeFromView(activeView.value));
+const isMonitoringView = computed(() => ['cctv', 'overview'].includes(activeView.value) || Boolean(incidentType.value));
 const selectedStationId = ref(null);
 const selectedHorizon = ref(6);
 const selectedModelVersion = ref('');
@@ -25,10 +32,12 @@ let refreshTimer = null;
 
 const navigation = [
     { id: 'overview', label: 'Tổng quan', icon: 'grid' },
+    { id: 'air-quality', label: 'Chất lượng không khí', icon: 'pulse' },
     { id: 'map', label: 'Bản đồ trạm', icon: 'map' },
     { id: 'alerts', label: 'Cảnh báo', icon: 'bell' },
     { id: 'model', label: 'Mô hình & chỉ số', icon: 'chart' },
     { id: 'pipeline', label: 'Trạng thái pipeline', icon: 'pulse' },
+    { id: 'cctv', label: 'CCTV giao thông', icon: 'camera' },
 ];
 const icon = (name) => ({
     grid: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
@@ -36,6 +45,7 @@ const icon = (name) => ({
     bell: '<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>',
     chart: '<svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h17"/><path d="m7 15 3-4 3 2 5-7"/></svg>',
     pulse: '<svg viewBox="0 0 24 24"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg>',
+    camera: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><circle cx="12" cy="14" r="3.5"/></svg>',
     refresh: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.9-3M4 5v5h5M4 13a8 8 0 0 0 14.9 3M20 19v-5h-5"/></svg>',
     arrow: '<svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>',
 }[name] || '');
@@ -68,8 +78,8 @@ const selectedModel = computed(() => {
 });
 const horizonMetricRows = computed(() => horizonMetrics(selectedModel.value));
 const sourceState = computed(() => ({ alerts: alertHistory.state, model: models.state, pipeline: pipeline.state, station: detail.state }[activeView.value] ?? overview.state));
-const busy = computed(() => overview.state.loading || sourceState.value.loading || hotspots.state.loading || (activeView.value === 'overview' && currentAlerts.state.loading));
-const title = computed(() => activeView.value === 'station' ? 'Chi tiết trạm' : navigation.find((view) => view.id === activeView.value)?.label);
+const busy = computed(() => !isMonitoringView.value && (overview.state.loading || sourceState.value.loading || hotspots.state.loading || (activeView.value === 'air-quality' && currentAlerts.state.loading)));
+const title = computed(() => incidentType.value ? `${eventTypes.find((type) => type.id === incidentType.value).label} / Chi tiết cảnh báo` : activeView.value === 'overview' ? 'Urban Monitoring Dashboard' : activeView.value === 'station' ? 'Chi tiết trạm' : navigation.find((view) => view.id === activeView.value)?.label);
 const riskLabel = (risk) => ({ elevated: 'Vượt ngưỡng', normal: 'Dưới ngưỡng', unknown: 'Không rõ' }[risk] ?? 'Không rõ');
 const statusLabel = (status) => ({ open: 'Đang mở', closed: 'Đã đóng', unknown: 'Không rõ', success: 'Thành công', failed: 'Lỗi', error: 'Lỗi', running: 'Đang chạy', pending: 'Chờ xử lý', ok: 'Hợp lệ', illustrative: 'Minh họa', active: 'Đang dùng', baseline: 'Baseline' }[status] ?? status ?? 'Chưa có dữ liệu');
 const dateLabel = (value) => formatDate(value, timezone.value);
@@ -81,6 +91,20 @@ const signedContribution = (value) => hasNumber(value) ? `${Number(value) > 0 ? 
 
 function navigate(view) {
     activeView.value = view;
+    showMobileNav.value = false;
+    window.history.pushState(null, '', view === 'cctv' ? '/cctv' : `/#${view}`);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function viewFromLocation() {
+    if (window.location.pathname === '/cctv') return 'cctv';
+    const hash = window.location.hash.slice(1);
+    if (incidentTypeFromView(hash)) return hash;
+    return ['overview', 'air-quality', 'map', 'alerts', 'model', 'pipeline', 'cctv'].includes(hash) ? hash : 'overview';
+}
+
+function syncLocation() {
+    activeView.value = viewFromLocation();
     showMobileNav.value = false;
 }
 
@@ -99,6 +123,7 @@ function chooseStation(id) {
 }
 
 async function refresh() {
+    if (isMonitoringView.value) return;
     const tasks = [overview.load(), currentAlerts.load('/api/alerts?status=open&current=1'), hotspots.load()];
     if (activeView.value === 'alerts') tasks.push(loadHistory(alertHistory.state.data?.meta?.current_page ?? 1));
     if (activeView.value === 'model') tasks.push(models.load());
@@ -108,17 +133,23 @@ async function refresh() {
 }
 
 watch(activeView, (view) => {
+    if (view === 'air-quality' || view === 'map') refresh();
+    else if (!isMonitoringView.value && !dashboard.value && !overview.state.loading) overview.load();
     if (view === 'alerts') loadHistory();
     if (view === 'model') models.load();
     if (view === 'pipeline') pipeline.load();
 });
 onMounted(() => {
+    window.addEventListener('popstate', syncLocation);
+    window.addEventListener('hashchange', syncLocation);
     refresh();
     refreshTimer = window.setInterval(() => {
         if (!busy.value) refresh();
     }, 60000);
 });
 onBeforeUnmount(() => {
+    window.removeEventListener('popstate', syncLocation);
+    window.removeEventListener('hashchange', syncLocation);
     if (refreshTimer) window.clearInterval(refreshTimer);
 });
 </script>
@@ -130,12 +161,18 @@ onBeforeUnmount(() => {
             <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div class="brand-name">air<span>scope</span></div></div>
             <div class="eyebrow nav-label">Không gian làm việc</div>
             <nav class="nav" aria-label="Điều hướng chính">
-                <button v-for="view in navigation" :key="view.id" :class="{ active: activeView === view.id }" :aria-current="activeView === view.id ? 'page' : undefined" @click="navigate(view.id)">
+                <button v-for="view in navigation" :key="view.id" :class="{ active: activeView === view.id || (view.id === 'overview' && incidentType) }" :aria-current="activeView === view.id ? 'page' : undefined" @click="navigate(view.id)">
                     <span aria-hidden="true" v-html="icon(view.icon)"></span>{{ view.label }}
                     <b v-if="view.id === 'alerts' && summary.open_alerts" class="nav-count">{{ summary.open_alerts }}</b>
                 </button>
             </nav>
-            <div class="sidebar-foot">
+            <div v-if="isMonitoringView" class="sidebar-foot">
+                <div class="eyebrow">Nguồn camera</div>
+                <div class="status-line">Danh mục OpenCCTV</div>
+                <div class="status-line"><i class="dot warn"></i>Ảnh định kỳ · Không phải video</div>
+                <div v-if="activeView === 'overview' || incidentType" class="status-line">AI chưa kết nối suy luận</div>
+            </div>
+            <div v-else class="sidebar-foot">
                 <div class="eyebrow">Nguồn dữ liệu</div>
                 <div class="status-line"><i class="dot" :class="{ warn: overview.state.error || !dashboard }"></i>{{ overview.state.error ? 'Mất kết nối API' : dashboard ? 'Đã kết nối API' : 'Đang kết nối' }}</div>
                 <div class="status-line"><i class="dot warn"></i>{{ synthetic ? 'Dữ liệu mô phỏng' : dashboard?.meta?.mode ?? 'Chưa xác định chế độ' }}</div>
@@ -146,33 +183,37 @@ onBeforeUnmount(() => {
             <header class="topbar">
                 <div class="head-left">
                     <button class="mobile-menu" aria-label="Mở menu điều hướng" aria-controls="sidebar" :aria-expanded="showMobileNav" @click="showMobileNav = !showMobileNav"><span aria-hidden="true" v-html="icon('grid')"></span></button>
-                    <div><div class="eyebrow">Theo dõi đô thị / {{ dashboard?.meta?.city ?? 'PM2.5' }}</div><h1 class="page-title">{{ title }}</h1></div>
+                    <div><div class="eyebrow">Theo dõi đô thị / {{ isMonitoringView ? 'CCTV Việt Nam' : dashboard?.meta?.city ?? 'PM2.5' }}</div><h1 class="page-title">{{ title }}</h1></div>
                 </div>
-                <div class="top-actions">
+                <div v-if="!isMonitoringView" class="top-actions">
                     <span class="timestamp">TẢI LÚC {{ dateLabel(sourceState.updatedAt) }}</span>
                     <button class="refresh" :class="{ spinning: busy }" :disabled="busy" aria-label="Làm mới dữ liệu" @click="refresh"><span aria-hidden="true" v-html="icon('refresh')"></span></button>
                 </div>
             </header>
             <div v-if="busy" class="loading-bar" role="status" aria-label="Đang tải dữ liệu"></div>
-            <div v-if="overview.state.error" class="notice error" role="alert">Không tải được dashboard. {{ dashboard ? 'Đang giữ bản tải gần nhất; dữ liệu có thể đã cũ.' : 'Kiểm tra Laravel và kết nối MySQL, rồi nhấn làm mới.' }}</div>
+            <div v-if="!isMonitoringView && overview.state.error" class="notice error" role="alert">Không tải được dashboard. {{ dashboard ? 'Đang giữ bản tải gần nhất; dữ liệu có thể đã cũ.' : 'Kiểm tra Laravel và kết nối MySQL, rồi nhấn làm mới.' }}</div>
             <div v-if="sourceState !== overview.state && sourceState.error" class="notice error" role="alert">Không tải được dữ liệu cho trang này. {{ sourceState.data ? 'Nội dung đang hiển thị là bản tải trước.' : 'Vui lòng thử làm mới.' }}</div>
-            <div v-if="synthetic" class="data-notice" role="note"><span class="pill warn">DEMO</span> Dữ liệu trạm, dự báo và chỉ số đều được mô phỏng. Không phải kết quả huấn luyện, khuyến cáo y tế hoặc bản đồ phủ toàn thành phố.</div>
+            <div v-if="synthetic && !isMonitoringView" class="data-notice" role="note"><span class="pill warn">DEMO</span> Dữ liệu trạm, dự báo và chỉ số đều được mô phỏng. Không phải kết quả huấn luyện, khuyến cáo y tế hoặc bản đồ phủ toàn thành phố.</div>
 
-            <template v-if="activeView === 'overview' || activeView === 'map'">
-                <div v-if="activeView === 'overview'" class="grid-kpi">
+            <CctvBrowser v-if="activeView === 'cctv'" />
+            <UrbanMonitoringDashboard v-if="activeView === 'overview'" @open-cctv="navigate('cctv')" @open-incident="navigate(`incident-${$event}`)" />
+            <IncidentDetail v-if="incidentType" :key="incidentType" :type-id="incidentType" @back="navigate('overview')" @open-type="navigate(`incident-${$event}`)" />
+
+            <template v-if="activeView === 'air-quality' || activeView === 'map'">
+                <div v-if="activeView === 'air-quality'" class="grid-kpi">
                     <div class="card kpi"><div class="kpi-label">PM2.5 trung bình</div><div class="kpi-value cyan">{{ formatNumber(summary.mean_pm25) }} <small>µg/m³</small></div><div class="kpi-meta">Từ quan trắc gần nhất có sẵn</div></div>
                     <div class="card kpi"><div class="kpi-label">Trạm đang hoạt động</div><div class="kpi-value">{{ formatNumber(summary.online_count, 0) }}<small> / {{ formatNumber(summary.station_count, 0) }}</small></div><div class="kpi-meta">Tuổi dữ liệu lớn nhất: {{ freshnessLabel(summary.data_freshness_minutes) }}</div></div>
                     <div class="card kpi"><div class="kpi-label">Cảnh báo đang mở</div><div class="kpi-value amber">{{ formatNumber(summary.open_alerts, 0) }}</div><div class="kpi-meta">{{ rule.open_count ?? '—' }} dự báo h=6 liên tiếp vượt ngưỡng</div></div>
                     <div class="card kpi"><div class="kpi-label">Ngưỡng cảnh báo nội bộ</div><div class="kpi-value">{{ formatNumber(rule.threshold) }} <small>µg/m³</small></div><div class="kpi-meta">{{ rule.rule_version ?? 'Chưa có cấu hình' }}</div></div>
                 </div>
 
-                <div :class="{ 'section-grid': activeView === 'overview' }">
+                <div :class="{ 'section-grid': activeView === 'air-quality' }">
                     <section class="card panel">
                         <div class="panel-head"><div><h2 class="panel-title">Bản đồ điểm quan trắc</h2><div class="panel-subtitle">Rủi ro theo dự báo h=6; một điểm vượt ngưỡng chưa đồng nghĩa có event mở.</div></div><span class="pill">{{ stations.length }} TRẠM</span></div>
                         <StationMap :stations="stations" :selected-id="selectedStationId" @select="selectedStationId = $event" />
                         <div v-if="mapSelection" class="map-selection"><span>{{ mapSelection.name }} · {{ forecastState(mapSelection.forecast) }}</span><button class="link-button" @click="chooseStation(mapSelection.id)">Mở chi tiết trạm <span aria-hidden="true" v-html="icon('arrow')"></span></button></div>
                     </section>
-                    <section v-if="activeView === 'overview'" class="card panel">
+                    <section v-if="activeView === 'air-quality'" class="card panel">
                         <div class="panel-head"><div><h2 class="panel-title">Cảnh báo cần chú ý</h2><div class="panel-subtitle">Sự kiện từ alert engine, sau bước xác nhận liên tiếp</div></div><span class="pill warn">{{ formatNumber(summary.open_alerts, 0) }} ĐANG MỞ</span></div>
                         <p v-if="currentAlerts.state.error" class="notice error" role="alert">Không tải được danh sách event. {{ currentAlerts.state.data ? 'Đang hiển thị bản tải trước.' : '' }}</p>
                         <div class="alert-list">
@@ -184,7 +225,7 @@ onBeforeUnmount(() => {
                     </section>
                 </div>
 
-                <section v-if="activeView === 'overview' || activeView === 'map'" class="card panel table-panel">
+                <section v-if="activeView === 'air-quality' || activeView === 'map'" class="card panel table-panel">
                     <div class="panel-head"><div><h2 class="panel-title">Điểm nóng dự báo</h2><div class="panel-subtitle">Xếp hạng các trạm có dự báo h=6 vượt ngưỡng; không nội suy ngoài vị trí trạm.</div></div><span class="pill warn">{{ hotspotRows.length }} TRẠM</span></div>
                     <div v-if="hotspots.state.error" class="notice error" role="alert">Không tải được bảng điểm nóng.</div>
                     <div class="table-scroll" tabindex="0" role="region" aria-label="Bảng xếp hạng điểm nóng">
@@ -207,7 +248,7 @@ onBeforeUnmount(() => {
             </template>
 
             <template v-else-if="activeView === 'station'">
-                <button class="back-btn" @click="navigate('overview')">← Quay lại tổng quan</button>
+                <button class="back-btn" @click="navigate('air-quality')">← Quay lại chất lượng không khí</button>
                 <template v-if="selectedStation">
                     <div class="detail-head"><div><div class="eyebrow">{{ selectedStation.id }} · {{ selectedStation.district }}</div><h2 class="station-heading">{{ selectedStation.name }}</h2></div><span class="risk-label" :class="selectedStation.risk">{{ riskLabel(selectedStation.risk) }} · h=6</span></div>
                     <div class="detail-kpis"><div class="card mini-kpi"><div class="mini-label">PM2.5 hiện tại</div><div class="mini-value">{{ formatNumber(selectedStation.current?.pm25) }} <small>µg/m³</small></div><div class="panel-subtitle">{{ freshnessLabel(selectedStation.freshness_minutes) }} · thiếu {{ formatNumber((selectedStation.missing_rate ?? 0) * 100) }}%</div></div><div class="card mini-kpi"><div class="mini-label">Độ ẩm</div><div class="mini-value">{{ formatNumber(selectedStation.current?.humidity) }} <small>%</small></div></div><div class="card mini-kpi"><div class="mini-label">Gió</div><div class="mini-value">{{ formatNumber(selectedStation.current?.wind_speed) }} <small>m/s</small></div></div></div>

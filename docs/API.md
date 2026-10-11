@@ -38,6 +38,55 @@ The `rule` object describes the configured h=6 event engine (`threshold`, `open_
 
 ## Endpoints
 
+### `GET /api/cctv`
+
+Read-only catalog for the `/cctv` screen. Reads `docs/data/opencctv-vietnam-traffic.csv` locally; does not use the database, fetch remote images, verify camera uptime, or proxy streams.
+
+| Query | Contract |
+| --- | --- |
+| `q` | Optional string, up to 120 characters; case/accent-insensitive match on name, region or camera ID |
+| `region` | Optional exact region label from `regions`, up to 80 characters |
+| `page` | Integer >= 1, default 1; clamped to the last page |
+| `per_page` | Integer 6-48, default 24 |
+
+Response shape (one illustrative row, counts reflect the bundled catalog):
+
+```json
+{
+  "data": [{
+    "id": "353925",
+    "name": "An Binh Ward",
+    "region": "Bình Dương",
+    "page_url": "https://opencctv.org/cameras/vietnam/binh-duong-province/an-binh-ward/an-binh-ward-353925",
+    "source": "OpenCCTV",
+    "playback": "resolve_on_select",
+    "status": "unverified"
+  }],
+  "meta": {
+    "total": 1283,
+    "catalog_total": 1283,
+    "current_page": 1,
+    "last_page": 54,
+    "per_page": 24,
+    "catalog_updated_at": "2026-10-04",
+    "source": "OpenCCTV public camera index"
+  },
+  "regions": ["Bình Dương", "Hà Nội", "TP. Hồ Chí Minh"]
+}
+```
+
+`total` is the filtered count; `catalog_total` counts unique accepted page URLs, not online streams. Region labels follow the source catalog, not current administrative boundaries. Empty searches return `data: []`, `total: 0`, and page 1 of 1. Missing/unreadable files or invalid headers return `503` without `data`; invalid queries return `422`.
+
+Only HTTPS OpenCCTV Vietnam camera-page URLs without query strings are accepted; duplicate URLs and unsafe entries are skipped. There is no `stream_url` in the catalog. The local-video player is browser-only and has no upload endpoint.
+
+### `GET /api/cctv/{id}/playback`
+
+Resolves one existing numeric catalog ID (30 requests/minute per client). Reads only that camera's allowlisted OpenCCTV page, with redirects disabled and an 8-second timeout. Accepts only a public original-image link matching `https://giaothong.hochiminhcity.gov.vn/render/ImageHandler.ashx?id=<24 hex characters>`, without extra query parameters. Does not fetch or proxy image bytes, signed OpenCCTV feeds, arbitrary URLs or credentials. Successful metadata is cached for 6 hours; no database is required with a file/array cache driver.
+
+Returns `data: {type: "snapshot", image_url, refresh_seconds: 20, source, page_url}` when found, or `type: "external_only", image_url: null` otherwise. Unknown IDs return `404`, upstream HTTP failures `502`, connection/timeouts `504`, rate limits `429`. Availability of a URL does not prove that its camera is online or that the image is fresh.
+
+The browser displays the original image directly, refreshes only the selected camera every 20 seconds, and pauses on hidden tabs or viewer teardown. Failed refreshes retain the last image with a stale label. Received time is local browser time, not a camera capture timestamp. Snapshot playback is not continuous video.
+
 ### `GET /api/health`
 
 Checks application and database connectivity. This route is suitable for Docker/load-balancer probes and does not require authentication.

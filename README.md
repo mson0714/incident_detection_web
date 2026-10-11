@@ -86,6 +86,20 @@ Mở `http://127.0.0.1:8000`. Nhấn Ctrl+C để dừng web. Dừng DB riêng b
 
 Ứng dụng có tổng quan, bản đồ trạm, dự báo 1/6/24 giờ, chi tiết dữ liệu và giải thích, lịch sử cảnh báo có bộ lọc/phân trang, chỉ số mô hình và nhật ký pipeline. Các trang đều đọc API Laravel; mất kết nối có thông báo rõ ràng, không tự thay bằng số liệu giả trong frontend.
 
+### Urban Monitoring Dashboard
+
+Trang mặc định `/#overview` hiện là **Urban Operations Control Room**: CCTV là lớp quan sát đầu vào, còn Accident AI / Helmet AI / Red Light AI / Flood AI là bốn năng lực xử lý chính. Bố cục gồm AI Capability Map, Camera / Map Overview, luồng cảnh báo gần đây và trạng thái hệ thống. Số đếm 03/18/07/02 và các sự kiện là **UI SAMPLE** theo mockup, không phải kết quả inference. Chọn thẻ hoặc model card để mở workspace chi tiết tương ứng.
+
+Khung camera dùng lại trình xem ảnh công khai; tab Map chỉ đánh dấu camera có tọa độ đã xác minh, không suy đoán vị trí còn thiếu. Các AI ghi rõ **Chưa kết nối**. Dashboard PM2.5 cũ được giữ tại menu **Chất lượng không khí** (`/#air-quality`).
+
+### CCTV trên web local
+
+Mở [http://127.0.0.1:8000/cctv](http://127.0.0.1:8000/cctv) hoặc chọn **CCTV giao thông** trong menu. Trang này đọc danh mục **1.283 URL camera duy nhất**, hỗ trợ tìm tên đường có/không dấu, mã camera, lọc khu vực và phân trang. Con số này không phải số camera đang online.
+
+**Xem ảnh CCTV trong Airscope:** chọn camera để tìm liên kết ảnh gốc công khai của Cổng giao thông TP.HCM. Trình duyệt tải trực tiếp ảnh và cập nhật mỗi 20 giây; có tạm dừng, làm mới và báo mất kết nối. Chỉ camera đang chọn được tải; rời tab hoặc chuyển sang video cục bộ sẽ dừng cập nhật. Đây là ảnh chụp định kỳ, không phải video liên tục; thời gian nhận ảnh không bảo đảm thời gian chụp. Camera chưa có nguồn phù hợp vẫn có liên kết mở trang nguồn. Không proxy feed OpenCCTV, dùng token hoặc vượt xác thực.
+
+Tab **Video của bạn** phát MP4/WebM/OGV trên máy bằng trình duyệt, không upload hay chạy nhận diện AI. Khả năng giải mã tùy codec của trình duyệt. Danh mục CCTV không cần database hoặc gọi camera bên ngoài để tải trang.
+
 <a id="project-scope"></a>
 
 ### Phạm vi hiện tại
@@ -183,13 +197,13 @@ Docker uses MySQL 8.4; local checks on this workstation use MariaDB 10.4 through
 
 ## API
 
-Read-only endpoints are available under `/api`: `/health`, `/dashboard`, `/stations`, `/stations/{id}`, `/forecast`, `/hotspots`, `/alerts`, `/model/metrics`, and `/pipeline/status`. The complete response contract is in [`docs/API.md`](docs/API.md).
+Read-only endpoints are available under `/api`: `/health`, `/dashboard`, `/stations`, `/stations/{id}`, `/forecast`, `/hotspots`, `/alerts`, `/model/metrics`, `/pipeline/status`, and `/cctv` (local camera catalog, not a stream proxy). The complete response contract is in [`docs/API.md`](docs/API.md).
 
 The alert engine uses the report's h=6 policy: two consecutive valid forecasts above the internal threshold open an event; two consecutive valid forecasts at or below it close the event. Missing, invalid, stale, and out-of-order data do not create evidence. Forecast identity is immutable and idempotent.
 
 ## Checks
 
-Kiểm tra local gần nhất **04/10/2026**: **30 PHP tests / 151 assertions**, **10 frontend tests**, production build thành công. Đây là kết quả chạy local, không phải badge CI tự cập nhật.
+Kiểm tra local gần nhất **04/10/2026**: **36 PHP tests / 190 assertions**, **12 frontend tests**, production build thành công. Đây là kết quả chạy local, không phải badge CI tự cập nhật.
 
 ```powershell
 php artisan test --compact
@@ -210,7 +224,7 @@ PHP tests use an isolated in-memory SQLite database, never the developer's MySQL
 | [API contract](docs/API.md) | Endpoints, response và trạng thái dữ liệu |
 | [Backend foundation](docs/backend-db-foundation-report.md) | Database, API và kiểm thử backend |
 | [Flood baseline](docs/flood-detection-baseline-report.md) | Dataset, feature extraction, training và giới hạn |
-| [CCTV sources](docs/cctv-sources.md) | Catalog 1.284 trang camera công khai và quy trình nghiên cứu |
+| [CCTV sources](docs/cctv-sources.md) | Catalog 1.283 URL camera duy nhất, trang local và giới hạn live |
 | [ML setup](ml/README.md) | Chuẩn bị môi trường Python và chạy module |
 
 ```text

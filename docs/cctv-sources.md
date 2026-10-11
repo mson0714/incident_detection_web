@@ -15,6 +15,18 @@ Script có delay mặc định `500 ms/request`; giảm tốc độ hoặc dừn
 
 ## Nguồn đã xác minh truy cập được
 
+### Xem trong Airscope
+
+Mở **[http://127.0.0.1:8000/cctv](http://127.0.0.1:8000/cctv)** hoặc menu **CCTV giao thông**. Danh mục có tìm kiếm không dấu, lọc khu vực và phân trang; API `GET /api/cctv` chỉ đọc CSV local, không tải frame hoặc kiểm tra hàng loạt camera.
+
+Kiểm tra lại ngày `2026-10-05`: trang OpenCCTV vẫn trả `X-Frame-Options: SAMEORIGIN`, nhưng trang camera mẫu **11B Nguyễn Bỉnh Khiêm** có liên kết **Open feed URL** tới ảnh gốc công khai của Cổng giao thông TP.HCM. Ảnh gốc trả `200 image/jpeg` và hiển thị trực tiếp trong Airscope. Ứng dụng chỉ đọc trang của camera đang chọn để tìm đúng liên kết HTTPS `giaothong.hochiminhcity.gov.vn/render/ImageHandler.ashx?id=...`, cache metadata 6 giờ; không tải hàng loạt catalog, không proxy ảnh, không sử dụng signed feed/token OpenCCTV.
+
+Trình xem cập nhật ảnh mỗi 20 giây, hỗ trợ tạm dừng/làm mới, dừng khi tab bị ẩn hoặc trình xem bị đóng. Đây là ảnh cập nhật, **không phải video liên tục**. Nhãn giờ nhận ảnh dùng giờ máy người xem, không xác nhận thời gian camera chụp. Nếu nguồn lỗi, ảnh trước đó được đánh dấu cũ; camera không có liên kết phù hợp chỉ mở tại nguồn. Không cam kết toàn bộ 1.283 camera hoạt động. Khả năng xem công khai không cấp quyền thu thập dataset, huấn luyện hoặc phân phối lại.
+
+Tab **Video của bạn** hỗ trợ file MP4/WebM/OGV đã có quyền sử dụng qua blob URL trong trình duyệt. File không được upload, lưu frame hoặc gửi vào mô hình. Codec phải được trình duyệt hỗ trợ.
+
+### Danh sách nguồn
+
 | Nguồn | Phạm vi nhìn thấy | Dùng tốt cho | Lưu ý quyền sử dụng |
 | --- | --- | --- | --- |
 | [Cổng thông tin giao thông TP.HCM](https://giaothong.hochiminhcity.gov.vn/) | Bản đồ, camera và video mode của hệ thống thành phố | Kiểm tra thủ công, đối chiếu tên/vị trí, nghiên cứu HCM | Nguồn chính thức; dùng giao diện và điều khoản của cổng. Không gọi endpoint nội bộ hàng loạt hoặc vượt xác thực. |
